@@ -23,7 +23,7 @@ import java.util.Locale;
 public class DBHelper extends SQLiteOpenHelper {
 
     private static final String DB_NAME = "homeserv.db";
-    private static final int DB_VERSION = 3;
+    private static final int DB_VERSION = 4;
     private static final String DEFAULT_PROVIDER_SERVICE = "General Service";
 
     public DBHelper(Context context) {
@@ -90,25 +90,8 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     private void seed(SQLiteDatabase db) {
+        // Sirf Admin account — baaki sab real users add karenge
         insertUser(db, "Admin", "0000", "admin123", Roles.ADMIN);
-        int customerId = (int) insertUser(db, "Ali Customer", "03000000001", "123456", Roles.CUSTOMER);
-        int providerUserId = (int) insertUser(db, "Usman Provider", "03000000002", "123456", Roles.PROVIDER);
-        int plumber = (int) insertProvider(db, "Usman Provider", "03000000002", "Plumber", providerUserId);
-        int electrician = (int) insertProvider(db, "Bright Electric", "03003334444", "Electrician", null);
-        int cleaner = (int) insertProvider(db, "CleanPro Team", "03005556666", "Cleaner", null);
-        int carpenter = (int) insertProvider(db, "WoodWorks PK", "03007778888", "Carpenter", null);
-        int painter = (int) insertProvider(db, "Green Paint Masters", "03009990000", "Painter", null);
-        int firstOffer = (int) insertOffer(db, plumber, "Emergency Pipe Repair",
-                "Leak fixing, pipe replacement, and bathroom plumbing support.", 2500.0, "2 hours");
-        insertOffer(db, electrician, "Fan & Switch Installation",
-                "Safe installation of fans, switches, boards, and wiring checks.", 1800.0, "1.5 hours");
-        insertOffer(db, cleaner, "Deep Home Cleaning",
-                "Complete room, kitchen, washroom, and floor cleaning service.", 5000.0, "4 hours");
-        insertOffer(db, carpenter, "Furniture Repair",
-                "Door, cabinet, chair, and small furniture repair service.", 3000.0, "3 hours");
-        insertOffer(db, painter, "Room Paint Service",
-                "Single room paint service with wall preparation and finishing.", 8000.0, "1 day");
-        insertBooking(db, firstOffer, customerId, "Please come after 4 PM.");
     }
 
     public long registerUser(String name, String phone, String password, String role, String serviceType) {
