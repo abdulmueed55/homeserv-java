@@ -118,8 +118,7 @@ public class DBHelper extends SQLiteOpenHelper {
             long userId = insertUser(db, name, phone, password, role);
             if (userId > 0 && Roles.PROVIDER.equals(role)) {
                 String providerServiceType = (serviceType != null) ? serviceType : DEFAULT_PROVIDER_SERVICE;
-                long providerId = insertProvider(db, name, phone, providerServiceType, (int) userId);
-                if (providerId > 0) insertDefaultOfferForProvider(db, (int) providerId, providerServiceType);
+                insertProvider(db, name, phone, providerServiceType, (int) userId);
             }
             db.setTransactionSuccessful();
             return userId;
@@ -203,8 +202,7 @@ public class DBHelper extends SQLiteOpenHelper {
         try {
             long userId = insertUser(db, name, phone, password, Roles.PROVIDER);
             if (userId > 0) {
-                long providerId = insertProvider(db, name, phone, serviceType, (int) userId);
-                if (providerId > 0) insertDefaultOfferForProvider(db, (int) providerId, serviceType);
+                insertProvider(db, name, phone, serviceType, (int) userId);
             }
             db.setTransactionSuccessful();
             return userId;
@@ -236,8 +234,7 @@ public class DBHelper extends SQLiteOpenHelper {
                         c.getString(c.getColumnIndexOrThrow("phone")),
                         DEFAULT_PROVIDER_SERVICE,
                         c.getInt(c.getColumnIndexOrThrow("id")));
-                if (providerId > 0)
-                    insertDefaultOfferForProvider(db, (int) providerId, DEFAULT_PROVIDER_SERVICE);
+
             }
         } finally {
             c.close();
@@ -294,26 +291,14 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     private void ensureDefaultOffersForProviders(SQLiteDatabase db) {
-        Cursor c = db.rawQuery(
-                "SELECT p.id,p.service_type FROM providers p " +
-                "LEFT JOIN offers o ON o.provider_id = p.id " +
-                "WHERE o.id IS NULL ORDER BY p.id", null);
-        try {
-            while (c.moveToNext()) {
-                insertDefaultOfferForProvider(db,
-                        c.getInt(c.getColumnIndexOrThrow("id")),
-                        c.getString(c.getColumnIndexOrThrow("service_type")));
-            }
-        } finally {
-            c.close();
-        }
+        // Default offers disabled - providers post their own offers via PostOfferActivity
     }
 
     public List<Offer> getOffers() {
         List<Offer> list = new ArrayList<>();
         Cursor c = getReadableDatabase().rawQuery(
                 "SELECT o.id,o.provider_id,p.name AS provider_name,p.service_type,o.title,o.description,o.price,o.duration " +
-                "FROM offers o INNER JOIN providers p ON p.id=o.provider_id ORDER BY o.id DESC", null);
+                "FROM offers o INNER JOIN providers p ON p.id=o.provider_id WHERE o.price > 0 ORDER BY o.id DESC", null);
         try {
             while (c.moveToNext()) list.add(cursorToOffer(c));
         } finally {
@@ -393,11 +378,29 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     public DashboardCounts getDashboardCounts() {
-        return new DashboardCounts(count("offers"), count("providers"), count("bookings"));
+        return new DashboardCounts(countRealOffers(), countProviders(), count("bookings"));
     }
 
     private int count(String table) {
         Cursor c = getReadableDatabase().rawQuery("SELECT COUNT(*) FROM " + table, null);
+        try {
+            return c.moveToFirst() ? c.getInt(0) : 0;
+        } finally {
+            c.close();
+        }
+    }
+
+    private int countRealOffers() {
+        Cursor c = getReadableDatabase().rawQuery("SELECT COUNT(*) FROM offers WHERE price > 0", null);
+        try {
+            return c.moveToFirst() ? c.getInt(0) : 0;
+        } finally {
+            c.close();
+        }
+    }
+
+    private int countProviders() {
+        Cursor c = getReadableDatabase().rawQuery("SELECT COUNT(*) FROM providers", null);
         try {
             return c.moveToFirst() ? c.getInt(0) : 0;
         } finally {
