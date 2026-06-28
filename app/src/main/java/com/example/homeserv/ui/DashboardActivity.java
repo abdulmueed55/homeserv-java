@@ -46,6 +46,8 @@ public class DashboardActivity extends AppCompatActivity {
 
         RecyclerView rv = findViewById(R.id.rvOffers);
         rv.setLayoutManager(new LinearLayoutManager(this));
+        rv.setNestedScrollingEnabled(false);
+        rv.setHasFixedSize(false);
         rv.setAdapter(adapter);
 
         boolean isAdmin = Roles.ADMIN.equals(user.role);
